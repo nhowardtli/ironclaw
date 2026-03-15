@@ -1,0 +1,39 @@
+# Build artifacts
+build/
+*.o
+*.a
+*.so
+
+# Keys — NEVER commit real keys
+keys/
+*.key
+*.age
+
+# Device configs with credentials
+devices.json
+!devices.example.json
+
+# Chain database
+chain.db
+
+# Editor
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Test artifacts
+*.log
+core
+core.*
