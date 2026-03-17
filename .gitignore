@@ -1,39 +1,57 @@
+# Credentials and keys
+devices.json
+devices-r35.json
+devices_plain.json
+*.age
+*.key
+onode-key.txt
+.env
+*.env
+
+# Runtime
+*.sock
+*.pid
+chain.db
+chain.db-journal
+chain.db-wal
+chain.db.bak*
+
 # Build artifacts
 build/
 *.o
-*.a
-*.so
 
-# Keys — NEVER commit real keys
-keys/
-*.key
-*.age
+# Claude config
+.claude/
 
-# Device configs with credentials
-devices.json
-!devices.example.json
-
-# Chain database
-chain.db
-
-# Editor
-*.swp
-*.swo
-*~
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Python
+# SSH
+.ssh/
+id_*
 __pycache__/
-*.pyc
-venv/
+*.tar.gz
+*.bak
+on
+on.dump*
+__pycache__/
+*.tar.gz
+*.bak
+on
+on.dump*
+devices.json
+devices-r35.json
+devices_plain.json
+*.age
+*.key
+onode-key.txt
 .env
-
-# Test artifacts
-*.log
-core
-core.*
+*.env
+*.sock
+*.pid
+chain.db
+chain.db-journal
+chain.db-wal
+chain.db.bak*
+build/
+*.o
+.claude/
+.ssh/
+id_*

@@ -49,6 +49,7 @@ typedef struct {
     char            artifact_type[16];
     char            artifact_id[128];
     char            artifact_hash[65];
+    char            artifact_content[8192]; /* Raw payload for artifact store */
     int64_t         from_sequence;
     int64_t         to_sequence;
     /* Intent fields (durable intent store) */
@@ -225,6 +226,8 @@ static bool parse_request(const char *json, onode_request_t *req)
                         sizeof(req->artifact_id));
     json_extract_string(json, "artifact_hash", req->artifact_hash,
                         sizeof(req->artifact_hash));
+    json_extract_string(json, "artifact_content", req->artifact_content,
+                        sizeof(req->artifact_content));
     json_extract_int64(json, "from_sequence", &req->from_sequence);
     json_extract_int64(json, "to_sequence", &req->to_sequence);
 
@@ -779,6 +782,13 @@ static void handle_client(onode_state_t *state, int client_fd)
                 send(client_fd, &err_code, 4, 0);
                 break;
             }
+            /* Store raw artifact content if provided */
+            if (req.artifact_content[0] != '\0') {
+                virp_chain_artifact_store(&state->chain,
+                    req.artifact_id, req.artifact_type,
+                    req.artifact_content, req.artifact_hash,
+                    req.session_id);
+            }
             /* JSON-encode the chain entry as observation payload */
             char json_buf[2048];
             int jlen = snprintf(json_buf, sizeof(json_buf),
@@ -893,6 +903,13 @@ static void handle_client(onode_state_t *state, int client_fd)
                 uint32_t err_code = htonl((uint32_t)err);
                 send(client_fd, &err_code, 4, 0);
                 break;
+            }
+            /* Store intent content as artifact */
+            if (ie.intent_json[0] != '\0') {
+                virp_chain_artifact_store(&state->chain,
+                    ie.intent_id, "intent",
+                    ie.intent_json, ie.intent_hash,
+                    req.session_id[0] != '\0' ? req.session_id : "intent");
             }
 
             char json_buf[512];

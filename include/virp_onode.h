@@ -35,7 +35,7 @@
 #define ONODE_HEARTBEAT_SEC     30
 #define ONODE_MAX_CLIENTS       8
 #define ONODE_RECV_TIMEOUT_SEC  5
-#define ONODE_MAX_REQUEST_SIZE  8192
+#define ONODE_MAX_REQUEST_SIZE  24576
 
 /* Auto-reconnect configuration */
 #define ONODE_WATCHDOG_INTERVAL_SEC  5   /* How often the watchdog checks */
