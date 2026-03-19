@@ -32,6 +32,7 @@ Copyright (c) 2026 Third Level IT LLC. All rights reserved.
 import hashlib
 import hmac as hmac_mod
 import json
+import sqlite3
 import logging
 import os
 import secrets
@@ -234,6 +235,68 @@ def parse_response(raw: bytes, device: str, command: str):
     }, None
 
 
+
+CHAIN_DB = "/var/lib/virp/chain.db"
+
+def chain_session():
+    try:
+        conn = sqlite3.connect(f"file://{CHAIN_DB}?mode=ro&immutable=1", uri=True)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute("SELECT session_id, MIN(timestamp_ns) AS first_ts, MAX(timestamp_ns) AS last_ts, COUNT(*) AS entry_count FROM chain_entries GROUP BY session_id ORDER BY first_ts DESC LIMIT 1")
+        row = cur.fetchone()
+        result = dict(row) if row else {"session_id": "none", "state": "UNBOUND", "entry_count": 0}
+        if row: result["state"] = "BOUND"
+        conn.close()
+        return result
+    except Exception as e:
+        return {"error": str(e), "session_id": "error", "state": "ERROR"}
+
+def chain_entries(limit=200):
+    try:
+        conn = sqlite3.connect(f"file://{CHAIN_DB}?mode=ro&immutable=1", uri=True)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute("SELECT id, session_id, sequence, artifact_type, artifact_id, substr(chain_hmac,1,12) as hmac_short, chain_hmac, timestamp_ns, artifact_hash, previous_entry_hash, chain_entry_hash FROM chain_entries ORDER BY timestamp_ns DESC LIMIT ?", (limit,))
+        entries = [dict(r) for r in cur.fetchall()]
+        cur.execute("SELECT COUNT(*) FROM chain_entries")
+        total = cur.fetchone()[0]
+        conn.close()
+        return {"entries": entries, "total": total}
+    except Exception as e:
+        return {"error": str(e), "entries": [], "total": 0}
+
+def chain_verify():
+    try:
+        conn = sqlite3.connect(f"file://{CHAIN_DB}?mode=ro&immutable=1", uri=True)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute("SELECT id, chain_entry_hash, previous_entry_hash FROM chain_entries ORDER BY id ASC")
+        rows = cur.fetchall()
+        conn.close()
+        if not rows:
+            return {"valid": False, "entries_checked": 0, "error": "no entries"}
+        checked = 0
+        for i, row in enumerate(rows):
+            if i > 0 and row["previous_entry_hash"] != rows[i-1]["chain_entry_hash"]:
+                return {"valid": False, "entries_checked": checked, "first_broken": row["id"]}
+            checked += 1
+        return {"valid": True, "entries_checked": checked, "first_broken": -1}
+    except Exception as e:
+        return {"valid": False, "entries_checked": 0, "error": str(e)}
+
+def chain_export():
+    try:
+        conn = sqlite3.connect(f"file://{CHAIN_DB}?mode=ro&immutable=1", uri=True)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM chain_entries ORDER BY id ASC")
+        entries = [dict(r) for r in cur.fetchall()]
+        conn.close()
+        return {"entries": entries, "total": len(entries)}
+    except Exception as e:
+        return {"error": str(e), "entries": [], "total": 0}
+
 class BridgeHandler(socketserver.StreamRequestHandler):
     """Handle one JSON request per TCP connection."""
 
@@ -252,6 +315,14 @@ class BridgeHandler(socketserver.StreamRequestHandler):
                 return
 
             command = req.get("command")
+            if command == "chain_session":
+                self._send_json(200, chain_session()); return
+            if command == "chain_entries":
+                self._send_json(200, chain_entries(req.get("limit", 200))); return
+            if command == "chain_verify":
+                self._send_json(200, chain_verify()); return
+            if command == "chain_export":
+                self._send_json(200, chain_export()); return
             hostname = req.get("hostname") or req.get("device")
             if not command or not hostname:
                 self._send_error(400, "missing 'command' and/or 'hostname'")

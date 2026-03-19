@@ -386,6 +386,10 @@ static bool asa_enter_enable(virp_conn_t *conn)
         char discard[4096];
         ssh_read_until_prompt(conn, discard, sizeof(discard), 3000);
 
+        /* Set terminal width to prevent 80-char line wrapping */
+        ssh_write(conn, "terminal width 512\n");
+        ssh_read_until_prompt(conn, discard, sizeof(discard), 3000);
+
         return true;
     }
 
@@ -576,9 +580,12 @@ static virp_conn_t *asa_connect(const virp_device_t *device)
     } else if (conn->current_mode == ASA_MODE_ENABLE ||
                conn->current_mode == ASA_MODE_CONFIG) {
         conn->in_enable = true;
-        /* Already in enable — just disable pager */
+        /* Already in enable — just disable pager and set width */
         ssh_write(conn, "terminal pager 0\n");
         char discard[4096];
+        ssh_read_until_prompt(conn, discard, sizeof(discard), 3000);
+
+        ssh_write(conn, "terminal width 512\n");
         ssh_read_until_prompt(conn, discard, sizeof(discard), 3000);
     }
 

@@ -1,57 +1,17 @@
-# Credentials and keys
-devices.json
-devices-r35.json
-devices_plain.json
-*.age
-*.key
 onode-key.txt
+devices_plain.json
+devices.json
+*.age
+chain.db*
 .env
-*.env
-
-# Runtime
-*.sock
-*.pid
-chain.db
-chain.db-journal
-chain.db-wal
-chain.db.bak*
-
-# Build artifacts
+*.key
 build/
-*.o
-
-# Claude config
-.claude/
-
-# SSH
-.ssh/
-id_*
 __pycache__/
+api/__pycache__/
+tests/__pycache__/
 *.tar.gz
 *.bak
 on
 on.dump*
-__pycache__/
-*.tar.gz
-*.bak
-on
-on.dump*
-devices.json
 devices-r35.json
-devices_plain.json
-*.age
-*.key
-onode-key.txt
-.env
-*.env
-*.sock
-*.pid
-chain.db
-chain.db-journal
-chain.db-wal
-chain.db.bak*
-build/
-*.o
-.claude/
-.ssh/
-id_*
+implementations/go/virp-onode-go

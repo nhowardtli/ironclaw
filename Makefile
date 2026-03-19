@@ -205,7 +205,16 @@ ONODE_PROD = $(BUILD_DIR)/virp-onode-prod
 $(ONODE_PROD): src/virp_onode_prod.c $(LIB)
 	$(CC) $(CFLAGS) $< $(LIB) $(LDFLAGS) -ljson-c -o $@
 
+prod: CISCO := 1
+prod: FORTIGATE := 1
+prod: PALOALTO := 1
+prod: ASA := 1
 prod: $(ONODE_PROD)
+
+# Full production build — recursive make ensures all ifdef guards evaluate correctly
+.PHONY: prod-full
+prod-full:
+	$(MAKE) CISCO=1 FORTIGATE=1 PANOS=1 ASA=1 LINUX=1 $(ONODE_PROD)
 
 # C/Go interop test
 TEST_INTEROP = $(BUILD_DIR)/test_interop_c
